@@ -20,4 +20,5 @@
         <TextField fx:id="messageField" HBox.hgrow="ALWAYS"/>
         <Button text="Отправить" onAction="#checkButtonClick" defaultButton="true"/>
     </HBox>
+
 </VBox>

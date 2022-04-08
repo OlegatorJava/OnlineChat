@@ -15,6 +15,7 @@ public class ChatApp extends Application {
         stage.setTitle("Online chat");
         stage.setScene(scene);
         stage.show();
+
     }
 
     public static void main(String[] args) {

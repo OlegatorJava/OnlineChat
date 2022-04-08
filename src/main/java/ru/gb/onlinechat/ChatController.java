@@ -23,4 +23,5 @@ public class ChatController {
             messageArea.appendText(playerString + "\n");
         }
     }
+
 }

@@ -7,12 +7,12 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class ChatApp extends Application {
+public class UIClient extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(ChatApp.class.getResource("hello-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(UIClient.class.getResource("client-ui.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 320, 540);
-        stage.setTitle("Online chat");
+        stage.setTitle("GB chat");
         stage.setScene(scene);
         stage.show();
 

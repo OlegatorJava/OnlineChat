@@ -3,76 +3,79 @@ package ru.gb.onlinechat.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import ru.gb.onlinechat.Command;
 
 public class ChatServer {
 
-    private final AuthService authService;
-    private final List<ClientHandler> clients;
+    private final Map<String, ClientHandler> clients;
+
 
     public ChatServer() {
-        authService = new InMemoryAuthService();
-        clients = new ArrayList<>();
-        authService.start();
+        this.clients = new HashMap<>();
     }
-
 
     public void run() {
-try (ServerSocket serverSocket = new ServerSocket(8189))
-        {
-    while (true){
-        System.out.println("Сервер ожидает подключения клиента");
-        Socket socket = serverSocket.accept();
-        System.out.println("Клиент подключился");
-        new ClientHandler(socket,this,authService);
-    }
-
-} catch (IOException e) {
-    throw new RuntimeException("Ощибка сервера", e);
-}
-    }
-
-    public AuthService getAuthService() {
-        return authService;
+        try (ServerSocket serverSocket = new ServerSocket(8189);
+             AuthService authService = new InMemoryAuthService()) {
+            while (true) {
+                System.out.println("Wait client connection...");
+                final Socket socket = serverSocket.accept();
+                new ClientHandler(socket, this, authService);
+                System.out.println("Client connected");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean isNickBusy(String nick) {
-        for (ClientHandler client : clients) {
-            if(client.getNick().equals(nick)){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void broadcast(String message) {
-        for (ClientHandler client : clients) {
-            client.sendMessage(message);
-        }
+        return clients.containsKey(nick);
     }
 
     public void subscribe(ClientHandler client) {
-        clients.add(client);
+        clients.put(client.getNick(), client);
+
+            broadcastClientList();
     }
 
     public void unsubscribe(ClientHandler client) {
-        clients.remove(client);
+        clients.remove(client.getNick());
+
+        broadcastClientList();
     }
 
-    public void privateMessage(String s, String message, String nick, ClientHandler i) {
-        ClientHandler client = searchByNick(nick);
-        if(client != null) {
-            client.sendMessage(s + message);
-            i.sendMessage(i.getNick() + ": " + message);
+    private void broadcastClientList() {
+        synchronized (this){
+        StringBuilder nicks = new StringBuilder();
+        for (ClientHandler value : clients.values()) {
+            nicks.append(value.getNick()).append(" ");
+        }
+//        final String nicks = clients.values().stream()
+//                .map(ClientHandler::getNick)
+//                .collect(Collectors.joining(" "));
+        broadcast(Command.CLIENTS, nicks.toString().trim());
+    }}
+
+    private void broadcast(Command command, String nicks) {
+        for (ClientHandler client : clients.values()) {
+            client.sendMessage(command, nicks);
         }
     }
-    public ClientHandler searchByNick(String nick){
-        for (ClientHandler client : clients) {
-            if(client.getNick().equals(nick)){
-                return client;
-            }
+
+    public void broadcast(String msg) {
+        clients.values().forEach(client -> client.sendMessage(msg));
+    }
+
+    public void sendMessageToClient(ClientHandler sender, String to, String message) {
+        final ClientHandler receiver = clients.get(to);
+        if (receiver != null) {
+            receiver.sendMessage("от " + sender.getNick() + ": " + message);
+            sender.sendMessage("участнику " + to + ": " + message);
+        } else {
+            sender.sendMessage(Command.ERROR, "Участника с ником " + to + " нет в чате!");
         }
-        return null;
     }
 }

@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 import ru.gb.onlinechat.Command;
 
@@ -132,6 +134,13 @@ public class ClientHandler {
                     }
                     if (command == Command.PRIVATE_MESSAGE) {
                         server.sendMessageToClient(this, params[0], params[1]);
+                        continue;
+                    }
+                    if (command == Command.CHANGE_NICK) {
+                        server.broadcast("Пользователь " + nick + " сменил ник на: " + params[0]);
+                        String oldNick = getNick();
+                        this.nick = params[0];
+                        server.subscribeChange(oldNick, this);
                         continue;
                     }
                 }

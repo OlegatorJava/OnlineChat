@@ -72,7 +72,7 @@ public class ChatClient {
                     continue;
                 }
                 if (command == Command.CLIENTS) {
-                    controller.updateClientList(params);
+                    Platform.runLater(() -> controller.updateClientList(params));
                     continue;
                 }
             }

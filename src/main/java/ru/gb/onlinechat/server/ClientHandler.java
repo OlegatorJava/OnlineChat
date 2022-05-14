@@ -1,10 +1,9 @@
 package ru.gb.onlinechat.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,8 +15,9 @@ public class ClientHandler {
     private final DataInputStream in;
     private final DataOutputStream out;
     private final AuthService authService;
-
+    private Path file;
     private String nick;
+    private String oldNick;
 
 
     public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
@@ -88,8 +88,10 @@ public class ClientHandler {
                                     sendMessage(Command.ERROR, "Пользователь уже авторизован");
                                     continue;
                                 }
-                                sendMessage(Command.AUTHOK, nick);
                                 this.nick = nick;
+                                this.oldNick = nick;
+                                sendMessage(Command.AUTHOK, nick);
+
                                 server.broadcast("Пользователь " + nick + " зашел в чат");
                                 server.subscribe(this);
                                 break;
@@ -116,6 +118,17 @@ public class ClientHandler {
         try {
             System.out.println("SERVER: Send message to " + nick);
             out.writeUTF(message);
+
+            try(DataOutputStream out2 = new DataOutputStream(new FileOutputStream(("history_" + oldNick + ".txt"), true));
+                    DataOutputStream out3 = new DataOutputStream(new FileOutputStream(("history.txt"), true))) {
+                out3.writeUTF(message);
+                out3.writeUTF("\n");
+                out2.writeUTF(message);
+                out2.writeUTF("\n");
+
+            }catch (IOException e){
+                e.printStackTrace();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -143,7 +156,13 @@ public class ClientHandler {
                         server.subscribeChange(oldNick, this);
                         continue;
                     }
+                }if(!Files.exists(Path.of("history.txt"))){
+                    file = Files.createFile(Path.of("history.txt"));
                 }
+                if(!Files.exists(Path.of("history_" + oldNick + ".txt")) && nick != null){
+                    file = Files.createFile(Path.of("history_" + oldNick + ".txt"));
+                }
+
                 server.broadcast(nick + ": " + msg);
             }
         } catch (IOException e) {

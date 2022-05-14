@@ -2,10 +2,11 @@ package ru.gb.onlinechat;
 
 import javafx.application.Platform;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.io.RandomAccessFile;
+
+
 
 import static java.lang.Thread.sleep;
 
@@ -14,8 +15,8 @@ public class ChatClient {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
-
     private final Controller controller;
+    private File file = new File("history.txt");
 
     public ChatClient(Controller controller) {
         this.controller = controller;
@@ -43,8 +44,10 @@ public class ChatClient {
             try {
                 waitAuthenticate();
                 timeThread.interrupt();
+                readHistory(file, 100);
                 readMessage();
             } catch (IOException e) {
+                e.printStackTrace();
                 System.out.println("Не успел");
             } finally {
                 closeConnection();
@@ -55,6 +58,51 @@ public class ChatClient {
         readThread.start();
 
     }
+
+    private void readHistory(File file, int lines) {
+        java.io.RandomAccessFile fileHandler = null;
+        try {
+            fileHandler =
+                    new java.io.RandomAccessFile( file, "r" );
+            long fileLength = fileHandler.length() - 1;
+            StringBuilder sb = new StringBuilder();
+            int line = 0;
+
+            for(long filePointer = fileLength; filePointer != -1; filePointer--){
+                fileHandler.seek( filePointer );
+                int readByte = fileHandler.readByte();
+
+                if( readByte == 0xA ) {
+                    if (filePointer < fileLength) {
+                        line = line + 1;
+                    }
+                } else if( readByte == 0xD ) {
+                    if (filePointer < fileLength-1) {
+                        line = line + 1;
+                    }
+                }
+                if (line >= lines) {
+                    break;
+                }
+                sb.append( ( char ) readByte );
+            }
+
+            String lastLine = sb.reverse().toString();
+            controller.addMessage(lastLine);
+        } catch( java.io.FileNotFoundException e ) {
+            e.printStackTrace();
+        } catch( java.io.IOException e ) {
+            e.printStackTrace();
+        }
+        finally {
+            if (fileHandler != null )
+                try {
+                    fileHandler.close();
+                } catch (IOException e) {
+                }
+        }
+    }
+
 
     private void readMessage() throws IOException {
         while (true) {
@@ -75,7 +123,9 @@ public class ChatClient {
                     Platform.runLater(() -> controller.updateClientList(params));
                     continue;
                 }
+
             }
+
             controller.addMessage(message);
         }
     }

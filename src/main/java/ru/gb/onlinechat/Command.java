@@ -20,6 +20,12 @@ public enum Command {
             return new String[]{commandText.split(COMMAND_DELIMITER)[1]};
         }
     },
+    CHANGE_NICK("/change") {
+        @Override
+        public String[] parse(String commandText) { //  /change newNick
+            return new String[]{commandText.split(COMMAND_DELIMITER)[1]};
+        }
+    },
     PRIVATE_MESSAGE("/w") { // /w nick1 Длинное сообщение для пользователя
 
         @Override

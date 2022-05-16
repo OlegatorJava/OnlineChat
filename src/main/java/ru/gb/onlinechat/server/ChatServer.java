@@ -19,7 +19,7 @@ public class ChatServer {
 
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(8189);
-             AuthService authService = new InMemoryAuthService()) {
+             AuthService authService = new DbAuthService()) {
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
@@ -31,10 +31,19 @@ public class ChatServer {
         }
     }
 
+
+
     public boolean isNickBusy(String nick) {
         return clients.containsKey(nick);
     }
 
+
+    public void subscribeChange(String oldNick, ClientHandler client) {
+        clients.remove(oldNick);
+        clients.put(client.getNick(), client);
+
+        broadcastClientList();
+    }
     public void subscribe(ClientHandler client) {
         clients.put(client.getNick(), client);
 
@@ -47,7 +56,7 @@ public class ChatServer {
         broadcastClientList();
     }
 
-    private void broadcastClientList() {
+    private void  broadcastClientList() {
         synchronized (this){
         StringBuilder nicks = new StringBuilder();
         for (ClientHandler value : clients.values()) {

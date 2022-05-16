@@ -1,6 +1,7 @@
 module ru.gb.onlinechat {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.sql;
 
 
     opens ru.gb.onlinechat to javafx.fxml;

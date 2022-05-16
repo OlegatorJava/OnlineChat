@@ -93,7 +93,9 @@ public class Controller {
     }
 
     public void updateClientList(String[] params) {
-        clientList.getItems().clear();
-        clientList.getItems().addAll(params);
+
+            clientList.getItems().clear();
+            clientList.getItems().addAll(params);
+
     }
 }

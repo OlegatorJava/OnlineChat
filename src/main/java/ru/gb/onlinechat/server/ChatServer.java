@@ -62,9 +62,6 @@ public class ChatServer {
         for (ClientHandler value : clients.values()) {
             nicks.append(value.getNick()).append(" ");
         }
-//        final String nicks = clients.values().stream()
-//                .map(ClientHandler::getNick)
-//                .collect(Collectors.joining(" "));
         broadcast(Command.CLIENTS, nicks.toString().trim());
     }}
 

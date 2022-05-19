@@ -4,8 +4,8 @@ import javafx.application.Platform;
 
 import java.io.*;
 import java.net.Socket;
-import java.io.RandomAccessFile;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 
 import static java.lang.Thread.sleep;
@@ -17,33 +17,33 @@ public class ChatClient {
     private DataOutputStream out;
     private final Controller controller;
     private File file = new File("history.txt");
+    private ExecutorService service;
+    private Future<Void> timeFuture;
 
-    public ChatClient(Controller controller) {
+    public ChatClient(Controller controller, ExecutorService service) {
         this.controller = controller;
+        this.service = service;
     }
 
     public void openConnection() throws Exception {
         socket = new Socket("localhost", 8189);
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
-
-        Thread timeThread = new Thread(() -> {
+        service.execute(() -> {
             try {
                 sleep(120000);
                 closeConnection();
-
             }
-             catch (InterruptedException e) {
-                 System.out.println("Прерывание");
+            catch (InterruptedException e) {
+                System.out.println("Прерывание");
             }
-        });  timeThread.start();
+        });
 
 
-
-        final Thread readThread = new Thread(() -> {
+        timeFuture = service.submit(() -> {
             try {
                 waitAuthenticate();
-                timeThread.interrupt();
+                timeFuture.cancel(true);
                 readHistory(file, 100);
                 readMessage();
             } catch (IOException e) {
@@ -52,10 +52,8 @@ public class ChatClient {
             } finally {
                 closeConnection();
             }
+            return null;
         });
-        readThread.setDaemon(true);
-
-        readThread.start();
 
     }
 

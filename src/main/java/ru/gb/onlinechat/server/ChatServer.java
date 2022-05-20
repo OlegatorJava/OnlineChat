@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import ru.gb.onlinechat.Command;
 
@@ -18,12 +20,13 @@ public class ChatServer {
     }
 
     public void run() {
+        ExecutorService service = Executors.newCachedThreadPool();
         try (ServerSocket serverSocket = new ServerSocket(8189);
              AuthService authService = new DbAuthService()) {
             while (true) {
                 System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
-                new ClientHandler(socket, this, authService);
+                new ClientHandler(socket, this, authService,service);
                 System.out.println("Client connected");
             }
         } catch (IOException e) {

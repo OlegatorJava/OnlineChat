@@ -4,8 +4,11 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 import ru.gb.onlinechat.Command;
 
@@ -20,7 +23,7 @@ public class ClientHandler {
     private String oldNick;
 
 
-    public ClientHandler(Socket socket, ChatServer server, AuthService authService) {
+    public ClientHandler(Socket socket, ChatServer server, AuthService authService,ExecutorService service) {
         try {
             this.nick = "";
             this.socket = socket;
@@ -29,14 +32,23 @@ public class ClientHandler {
             this.out = new DataOutputStream(socket.getOutputStream());
             this.authService = authService;
 
-            new Thread(() -> {
+
+            service.execute(() -> {
+                try {
+                    authenticate();
+                    readMessages();
+                } finally {
+                    closeConnection();
+                }});
+            service.shutdown();
+            /*new Thread(() -> {
                 try {
                     authenticate();
                     readMessages();
                 } finally {
                     closeConnection();
                 }
-            }).start();
+            }).start();*/
 
         } catch (IOException e) {
             throw new RuntimeException(e);

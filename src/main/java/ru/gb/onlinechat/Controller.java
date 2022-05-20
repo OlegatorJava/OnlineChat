@@ -7,6 +7,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Controller {
 
@@ -26,9 +28,11 @@ public class Controller {
     private TextArea textArea;
 
     private final ChatClient client;
+    private ExecutorService service;
 
     public Controller() {
-        client = new ChatClient(this);
+         service = Executors.newCachedThreadPool();
+        client = new ChatClient(this, service);
         while (true) {
             try {
                 client.openConnection();

@@ -8,12 +8,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.onlinechat.Command;
 
 public class ChatServer {
 
     private final Map<String, ClientHandler> clients;
-
+    private static final Logger LOGGER = LogManager.getLogger(ChatServer.class.getName());
 
     public ChatServer() {
         this.clients = new HashMap<>();
@@ -24,10 +26,12 @@ public class ChatServer {
         try (ServerSocket serverSocket = new ServerSocket(8189);
              AuthService authService = new DbAuthService()) {
             while (true) {
-                System.out.println("Wait client connection...");
+                LOGGER.info("Wait client connection...");
+                //System.out.println("Wait client connection...");
                 final Socket socket = serverSocket.accept();
                 new ClientHandler(socket, this, authService,service);
-                System.out.println("Client connected");
+                LOGGER.info("Client connected");
+                //System.out.println("Client connected");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,6 +89,7 @@ public class ChatServer {
             sender.sendMessage("участнику " + to + ": " + message);
         } else {
             sender.sendMessage(Command.ERROR, "Участника с ником " + to + " нет в чате!");
+            LOGGER.error("Участника с ником {} нет в чате!", to);
         }
     }
 }

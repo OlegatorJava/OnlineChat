@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ru.gb.onlinechat.Command;
 
@@ -21,7 +23,7 @@ public class ClientHandler {
     private Path file;
     private String nick;
     private String oldNick;
-
+    private static final Logger LOGGER = LogManager.getLogger(ClientHandler.class);
 
     public ClientHandler(Socket socket, ChatServer server, AuthService authService,ExecutorService service) {
         try {
@@ -85,7 +87,6 @@ public class ClientHandler {
     private void authenticate() {
         while (true) {
             try {
-
                     final String str = in.readUTF();
                     if (Command.isCommand(str)) {
                         final Command command = Command.getCommand(str);
@@ -98,6 +99,7 @@ public class ClientHandler {
                             if (nick != null) {
                                 if (server.isNickBusy(nick)) {
                                     sendMessage(Command.ERROR, "Пользователь уже авторизован");
+                                    LOGGER.error("Пользователь уже авторизован");
                                     continue;
                                 }
                                 this.nick = nick;
@@ -105,10 +107,12 @@ public class ClientHandler {
                                 sendMessage(Command.AUTHOK, nick);
 
                                 server.broadcast("Пользователь " + nick + " зашел в чат");
+                                LOGGER.info("Пользователь {} зашел в чат", nick);
                                 server.subscribe(this);
                                 break;
                             } else {
                                 sendMessage(Command.ERROR, "Неверные логин и пароль");
+                                LOGGER.error("Неверные логин и пароль");
                             }
                         }
                     }
@@ -128,7 +132,8 @@ public class ClientHandler {
 
     public void sendMessage(String message) {
         try {
-            System.out.println("SERVER: Send message to " + nick);
+            LOGGER.info("SERVER: Send message to " + nick);
+            //System.out.println("SERVER: Send message to " + nick);
             out.writeUTF(message);
 
             try(DataOutputStream out2 = new DataOutputStream(new FileOutputStream(("history_" + oldNick + ".txt"), true));
@@ -150,7 +155,8 @@ public class ClientHandler {
         try {
             while (true) {
                 final String msg = in.readUTF();
-                System.out.println("Receive message: " + msg);
+                LOGGER.info("Receive message: " + msg);
+                //System.out.println("Receive message: " + msg);
                 if (Command.isCommand(msg)) {
                     final Command command = Command.getCommand(msg);
                     final String[] params = command.parse(msg);
@@ -163,6 +169,7 @@ public class ClientHandler {
                     }
                     if (command == Command.CHANGE_NICK) {
                         server.broadcast("Пользователь " + nick + " сменил ник на: " + params[0]);
+                        LOGGER.info("Пользователь {} сменил ник на: {}", nick, params[0]);
                         String oldNick = getNick();
                         this.nick = params[0];
                         server.subscribeChange(oldNick, this);

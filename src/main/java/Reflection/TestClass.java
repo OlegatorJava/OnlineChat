@@ -9,7 +9,7 @@ public class TestClass {
     public void method1(){
         System.out.println("method1");
     }
-    @Test(8)
+    @Test()
     public void method2(){
         System.out.println("method2");
     }
@@ -17,7 +17,7 @@ public class TestClass {
     public void afterMethod(){
         System.out.println("AfterSuite");
     }
-    @Test(8)
+    @Test(10)
     public void method3(){
         System.out.println("method3");
     }
